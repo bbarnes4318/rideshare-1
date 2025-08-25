@@ -1,69 +1,38 @@
 const { google } = require('googleapis');
-const { GoogleAuth } = require('google-auth-library');
+const { JWT } = require('google-auth-library');
 
-const REQUIRED_ENVS = ['GOOGLE_SHEETS_ID', 'GOOGLE_PROJECT_ID', 'GOOGLE_CLIENT_EMAIL'];
+const REQUIRED_ENVS = ['GOOGLE_SHEETS_ID', 'GOOGLE_PROJECT_ID', 'GOOGLE_CLIENT_EMAIL', 'GOOGLE_PRIVATE_KEY'];
 
 function assertEnv() {
   const missing = REQUIRED_ENVS.filter((k) => !process.env[k] || String(process.env[k]).trim() === '');
-  const hasKey = (process.env.GOOGLE_PRIVATE_KEY && String(process.env.GOOGLE_PRIVATE_KEY).trim() !== '') ||
-                 (process.env.GOOGLE_PRIVATE_KEY_BASE64 && String(process.env.GOOGLE_PRIVATE_KEY_BASE64).trim() !== '');
-  if (missing.length || !hasKey) {
-    const allMissing = [...missing];
-    if (!hasKey) allMissing.push('GOOGLE_PRIVATE_KEY or GOOGLE_PRIVATE_KEY_BASE64');
-    throw new Error(`Missing required environment variables: ${allMissing.join(', ')}`);
+  if (missing.length) {
+    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
-}
-
-function resolvePrivateKeyFromEnv() {
-  let raw = process.env.GOOGLE_PRIVATE_KEY || '';
-  const b64 = process.env.GOOGLE_PRIVATE_KEY_BASE64 || '';
-
-  // If base64 provided, prefer it
-  if (b64 && b64.trim() !== '') {
-    try {
-      const decoded = Buffer.from(b64, 'base64').toString('utf8');
-      if (decoded.includes('BEGIN') && decoded.includes('PRIVATE KEY')) return decoded;
-    } catch (_) {}
-  }
-
-  if (!raw || raw.trim() === '') return raw;
-
-  // Strip surrounding quotes if present
-  if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) {
-    raw = raw.slice(1, -1);
-  }
-
-  // If it contains literal \n sequences, convert them to newlines
-  if (raw.includes('\\n')) {
-    return raw.replace(/\\n/g, '\n');
-  }
-
-  // If it already looks like a PEM with real newlines or BEGIN header, return as-is
-  if (raw.includes('BEGIN') || raw.includes('\n')) {
-    return raw;
-  }
-
-  // Fallback: return raw
-  return raw;
 }
 
 async function getSheetsClient() {
   assertEnv();
 
-  const privateKey = resolvePrivateKeyFromEnv();
+  let privateKey = process.env.GOOGLE_PRIVATE_KEY;
+  
+  // Handle different key formats
+  if (privateKey.includes('\\n')) {
+    privateKey = privateKey.replace(/\\n/g, '\n');
+  }
+  
+  // Strip quotes if present
+  if ((privateKey.startsWith('"') && privateKey.endsWith('"')) || 
+      (privateKey.startsWith("'") && privateKey.endsWith("'"))) {
+    privateKey = privateKey.slice(1, -1);
+  }
 
-  const auth = new GoogleAuth({
-    credentials: {
-      type: 'service_account',
-      project_id: process.env.GOOGLE_PROJECT_ID,
-      client_email: process.env.GOOGLE_CLIENT_EMAIL,
-      private_key: privateKey,
-    },
+  const auth = new JWT({
+    email: process.env.GOOGLE_CLIENT_EMAIL,
+    key: privateKey,
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
 
-  const authClient = await auth.getClient();
-  const sheets = google.sheets({ version: 'v4', auth: authClient });
+  const sheets = google.sheets({ version: 'v4', auth });
   return sheets;
 }
 
