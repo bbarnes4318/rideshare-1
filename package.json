@@ -1,0 +1,21 @@
+{
+  "name": "ride",
+  "version": "1.0.0",
+  "description": "This app exposes a JSON webhook that appends incoming data into the `rideshare` sheet of your Google Spreadsheet.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js",
+    "test": "echo \"No tests\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "google-auth-library": "^10.2.1",
+    "googleapis": "^157.0.0"
+  }
+}
