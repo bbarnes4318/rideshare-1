@@ -1,5 +1,4 @@
 const { google } = require('googleapis');
-const { JWT } = require('google-auth-library');
 
 const REQUIRED_ENVS = ['GOOGLE_SHEETS_ID', 'GOOGLE_PROJECT_ID', 'GOOGLE_CLIENT_EMAIL', 'GOOGLE_PRIVATE_KEY'];
 
@@ -26,13 +25,18 @@ async function getSheetsClient() {
     privateKey = privateKey.slice(1, -1);
   }
 
-  const auth = new JWT({
-    email: process.env.GOOGLE_CLIENT_EMAIL,
-    key: privateKey,
+  const auth = new google.auth.GoogleAuth({
+    credentials: {
+      type: 'service_account',
+      project_id: process.env.GOOGLE_PROJECT_ID,
+      client_email: process.env.GOOGLE_CLIENT_EMAIL,
+      private_key: privateKey,
+    },
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
 
-  const sheets = google.sheets({ version: 'v4', auth });
+  const authClient = await auth.getClient();
+  const sheets = google.sheets({ version: 'v4', auth: authClient });
   return sheets;
 }
 
