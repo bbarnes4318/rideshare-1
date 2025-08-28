@@ -2,8 +2,7 @@ require('dotenv').config();
 
 const express = require('express');
 const bodyParser = require('body-parser');
-// Comment out Google Sheets for testing
-// const { getSheetsClient, ensureSheetAndHeaders, appendRowToSheet } = require('./sheets');
+const { getSheetsClient, ensureSheetAndHeaders, appendRowToSheet } = require('./sheets');
 
 const app = express();
 
@@ -68,17 +67,17 @@ app.post('/webhook', async (req, res) => {
       return String(value);
     });
 
-    // For testing purposes, just log the data instead of sending to Google Sheets
+    // Log the data for debugging
     console.log('Form submission received:', JSON.stringify(payload, null, 2));
     console.log('Formatted row:', row);
 
-    // Comment out Google Sheets functionality for testing
-    // const sheets = await getSheetsClient();
-    // if (!sheetReady) {
-    //   await ensureSheetAndHeaders(sheets, SHEET_TITLE, HEADERS);
-    //   sheetReady = true;
-    // }
-    // await appendRowToSheet(sheets, SHEET_TITLE, row);
+    // Send data to Google Sheets
+    const sheets = await getSheetsClient();
+    if (!sheetReady) {
+      await ensureSheetAndHeaders(sheets, SHEET_TITLE, HEADERS);
+      sheetReady = true;
+    }
+    await appendRowToSheet(sheets, SHEET_TITLE, row);
 
     res.json({ success: true });
   } catch (err) {
