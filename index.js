@@ -2,11 +2,15 @@ require('dotenv').config();
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const { getSheetsClient, ensureSheetAndHeaders, appendRowToSheet } = require('./sheets');
+// Comment out Google Sheets for testing
+// const { getSheetsClient, ensureSheetAndHeaders, appendRowToSheet } = require('./sheets');
 
 const app = express();
 app.use(bodyParser.json({ limit: '1mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '1mb' }));
+
+// Serve static files from public directory
+app.use(express.static('public'));
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
 const SHEET_TITLE = 'rideshare';
@@ -32,6 +36,10 @@ const HEADERS = [
 ];
 
 let sheetReady = false;
+
+app.get('/', (_req, res) => {
+  res.sendFile(__dirname + '/public/index.html');
+});
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
@@ -59,14 +67,17 @@ app.post('/webhook', async (req, res) => {
       return String(value);
     });
 
-    const sheets = await getSheetsClient();
+    // For testing purposes, just log the data instead of sending to Google Sheets
+    console.log('Form submission received:', JSON.stringify(payload, null, 2));
+    console.log('Formatted row:', row);
 
-    if (!sheetReady) {
-      await ensureSheetAndHeaders(sheets, SHEET_TITLE, HEADERS);
-      sheetReady = true;
-    }
-
-    await appendRowToSheet(sheets, SHEET_TITLE, row);
+    // Comment out Google Sheets functionality for testing
+    // const sheets = await getSheetsClient();
+    // if (!sheetReady) {
+    //   await ensureSheetAndHeaders(sheets, SHEET_TITLE, HEADERS);
+    //   sheetReady = true;
+    // }
+    // await appendRowToSheet(sheets, SHEET_TITLE, row);
 
     res.json({ success: true });
   } catch (err) {
