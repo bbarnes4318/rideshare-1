@@ -517,7 +517,7 @@
              data.xxTrustedFormCertUrl = trustedFormField ? trustedFormField.value : window.location.href;
             
                          try {
-                 const response = await fetch('https://rideshare-1-vuqif.ondigitalocean.app/webhook', {
+                 const response = await fetch('/webhook', {
                      method: 'POST',
                      headers: {
                          'Content-Type': 'application/json',
